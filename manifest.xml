@@ -1,0 +1,18 @@
+<package>
+  <description brief="raspi_interface">
+  The raspi_interface package can only run on a Raspberry Pi
+  and requires wiringPi to be installed
+
+  </description>
+  <author>Kai Franke</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/raspi_interface</url>
+  <depend package="roscpp"/>
+  <depend package="bosch_drivers_common"/>
+
+  <!-- Export the header files so library can be used by other packages. -->
+  <export>
+    <cpp cflags="-I${prefix}/include/raspi_interface" lflags="-L${prefix}/lib -lraspi_interface"/>
+  </export>
+</package>
