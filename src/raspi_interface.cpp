@@ -97,6 +97,11 @@ ssize_t RaspiInterface::read( int device_address, interface_protocol protocol, i
  
   switch( protocol )
   {
+    case GPIO:
+    {
+      error_code = arduinoGpioRead( (uint8_t)flags[0], reg_address, data );
+      break;
+    }
     default:
     {
       ROS_ERROR("Raspberry Pi does not support reading through this protocol.");
@@ -193,24 +198,30 @@ ssize_t RaspiInterface::raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* valu
     return -1;
   }
   
+  pinMode( pin, INPUT );
+  
   switch ((gpio_input_mode) flags )
   {
     case FLOATING:
-    case PULLUP: break;
+    {
+      pullUpDnControl( pin, PUD_OFF );
+    } break;
+    case PULLUP:
+    {
+      pullUpDnControl( pin, PUD_UP );
+    } break;
     case PULLDOWN:
     {
-      ROS_ERROR("The selected input mode is not available for Raspberry Pi");
-      ROS_ERROR("Select FLOATING instead");
-      return -1;
-    }break;
+      pullUpDnControl( pin, PUD_DOWN );
+    } break;
     default:
     {
       ROS_ERROR("ArduinoInterface::arduinoGpioRead The selected input mode is not known");
       return -1;
     }
   }
-  pinMode (pin, OUTPUT);
-  digitalWrite (pin, value);
+  
+  value[0] = digitalRead( pin );
   
   return 1;
 }
