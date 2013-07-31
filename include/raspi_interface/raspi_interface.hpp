@@ -45,11 +45,14 @@
 #include <bosch_drivers_hardware_interface.hpp>
 #include <bosch_drivers_parameters.hpp>
 
+using namespace bosch_drivers_common;
+
 class RaspiInterface: public bosch_hardware_interface
 {
   /**
    * \brief The Raspberry Pi hardware interface.
    * This code is meant to run on a raspberry pi with the wiringPi package installed
+   * Get the wiringPi source code from http://wiringpi.com/
    */
 
 public:
@@ -102,6 +105,7 @@ public:
 private:
 
   ssize_t raspiGpioWrite( uint8_t pin, bool value );
+  ssize_t raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* value );
   
   bool is_initialized_;
   
