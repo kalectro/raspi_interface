@@ -18,3 +18,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(raspi_interface src/raspi_interface.cpp)
 target_link_libraries(raspi_interface wiringPi)
+
+rosbuild_add_executable(gpio_test src/gpio_test.cpp)
+target_link_libraries(gpio_test raspi_interface)
