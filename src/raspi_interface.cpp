@@ -41,7 +41,7 @@
 /**********************************************************************/
 // Constructor
 /**********************************************************************/
-RaspiInterface::RaspiInterface( std::string port_name ):
+RaspiInterface::RaspiInterface():
   is_initialized_( false )
 {
 }
@@ -72,7 +72,7 @@ bool RaspiInterface::initialize()
   
   if( init_reply != 0 )
   {
-    ROS_ERROR( "WiringPi not initialized properly. Returned %i", init_success);
+    ROS_ERROR( "WiringPi not initialized properly. Returned %i", init_reply);
     return false;
   }
 
@@ -167,13 +167,48 @@ ssize_t RaspiInterface::raspiGpioWrite( uint8_t pin, bool value )
 {
 
   // check if selected pin is valid for Raspberry Pi
-  if(pin < 0 || pin > 16)
+  if( pin > 16 )
   {
     ROS_ERROR("The selected Pin number is not available for GPIO");
     ROS_ERROR("Select Pins 0 through 16 instead");
     return -1;
   }
   
+  pinMode (pin, OUTPUT);
+  digitalWrite (pin, value);
+  
+  return 1;
+}
+
+/**********************************************************************/
+/**********************************************************************/
+ssize_t RaspiInterface::raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* value )
+{
+
+  // check if selected pin is valid for Raspberry Pi
+  if( pin > 16 )
+  {
+    ROS_ERROR("The selected Pin number is not available for GPIO");
+    ROS_ERROR("Select Pins 0 through 16 instead");
+    return -1;
+  }
+  
+  switch ((gpio_input_mode) flags )
+  {
+    case FLOATING:
+    case PULLUP: break;
+    case PULLDOWN:
+    {
+      ROS_ERROR("The selected input mode is not available for Raspberry Pi");
+      ROS_ERROR("Select FLOATING instead");
+      return -1;
+    }break;
+    default:
+    {
+      ROS_ERROR("ArduinoInterface::arduinoGpioRead The selected input mode is not known");
+      return -1;
+    }
+  }
   pinMode (pin, OUTPUT);
   digitalWrite (pin, value);
   
