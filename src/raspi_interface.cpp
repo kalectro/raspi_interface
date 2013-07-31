@@ -99,7 +99,7 @@ ssize_t RaspiInterface::read( int device_address, interface_protocol protocol, i
   {
     case GPIO:
     {
-      error_code = arduinoGpioRead( (uint8_t)flags[0], reg_address, data );
+      error_code = raspiGpioRead( (uint8_t)flags[0], reg_address, data );
       break;
     }
     default:
