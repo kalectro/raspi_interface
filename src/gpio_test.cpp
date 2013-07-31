@@ -40,7 +40,7 @@
 #include <ros/ros.h>
 
 #include <gpio_driver/gpio_driver.h>
-#include <raspi_interface.hpp> 
+#include <raspi_interface/raspi_interface.hpp> 
 
 #define OUTPUT_PIN 4
 #define INPUT_PIN 3
