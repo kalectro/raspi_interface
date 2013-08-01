@@ -269,7 +269,7 @@ ssize_t RaspiInterface::raspiSpiRead( int frequency, uint8_t flags, uint8_t* dat
   }
   if( frequency < MIN_SPI_FREQUENCY || frequency > MAX_SPI_FREQUENCY )
   {
-    ROS_WARN( "The requested frequency is out of bounds. Setting frequency to 1MHz" );
+    ROS_WARN( "The requested frequency of %i is out of bounds. Setting frequency to 1MHz", frequency );
     frequency = 1e6;
   }
   
