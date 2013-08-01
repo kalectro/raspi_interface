@@ -41,9 +41,14 @@
 
 #include <ros/ros.h>
 #include <wiringPi.h>
+#include <wiringPiSPI.h>
 
 #include <bosch_drivers_hardware_interface.hpp>
 #include <bosch_drivers_parameters.hpp>
+
+#define MAX_SPI_CHANNELS 2
+#define MIN_SPI_FREQUENCY 5e5
+#define MAX_SPI_FREQUENCY 32e6
 
 using namespace bosch_drivers_common;
 
@@ -106,8 +111,13 @@ private:
 
   ssize_t raspiGpioWrite( uint8_t pin, bool value );
   ssize_t raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* value );
+  ssize_t raspiSpiRead( int frequency, uint8_t flags, uint8_t* data, size_t num_bytes );
   
+  // is set to false when object is created and set to true after initialize() was successful
   bool is_initialized_;
+  
+  // save which SPI channels (CS lines) are currently in used
+  bool use_spi[MAX_SPI_CHANNELS];
   
 };
 #endif //RASPI_INTERFACE_H_

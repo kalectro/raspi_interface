@@ -70,6 +70,12 @@ bool RaspiInterface::initialize()
   // Setup WiringPi
   int init_reply = wiringPiSetup ();
   
+  // Set all SPI channels not to use by default
+  for( ssize_t i = 0; i < MAX_SPI_CHANNELS; ++i )
+  {
+    use_spi[i] = false;
+  }
+  
   if( init_reply != 0 )
   {
     ROS_ERROR( "WiringPi not initialized properly. Returned %i", init_reply);
@@ -80,7 +86,6 @@ bool RaspiInterface::initialize()
   ROS_INFO( "RaspiInterface::initialize(): WiringPi initialized." );
   return true;
 }
-
 
 /**********************************************************************/
 // Read
@@ -100,6 +105,11 @@ ssize_t RaspiInterface::read( int device_address, interface_protocol protocol, i
     case GPIO:
     {
       error_code = raspiGpioRead( (uint8_t)flags[0], reg_address, data );
+      break;
+    }
+    case SPI:
+    {
+      error_code = raspiSpiRead( (uint8_t)frequency, (uint8_t)flags[0], data, num_bytes );
       break;
     }
     default:
@@ -151,6 +161,7 @@ bool RaspiInterface::supportedProtocol( interface_protocol protocol )
   switch( protocol )
   {
   case GPIO:
+  case SPI:
     return true;
   default:
     return false;
@@ -224,4 +235,62 @@ ssize_t RaspiInterface::raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* valu
   value[0] = digitalRead( pin );
   
   return 1;
+}
+
+/**********************************************************************/
+/**********************************************************************/
+ssize_t RaspiInterface::raspiSpiRead( int frequency, uint8_t flags, uint8_t* data, size_t num_bytes ) 
+{
+  //  Decrypt flags:
+  uint8_t spi_slave_select = (flags >> 4);
+  uint8_t bit_order = (flags>>2) & 0x01;
+  uint8_t mode = flags & 0x03;
+  
+  // Sanity check for decrypted flags
+  if( mode != 0 )
+  {
+    ROS_ERROR( "Only mode 0 is implemented in wiringPi at this point" );
+    return -1;
+  }
+  if( bit_order != 0 )
+  {
+    ROS_ERROR( "Only MSB first is implemented in wiringPi at this point" );
+    return -1;
+  }
+  if( spi_slave_select == bosch_drivers_common::NULL_DEVICE )
+  {
+    ROS_ERROR( "NULL_DEVICE functionality not implemented yet" );
+    return -1;
+  }
+  if( spi_slave_select >= MAX_SPI_CHANNELS )
+  {
+    ROS_ERROR( "Maximum SPI channel is %i, you asked for channel %i", MAX_SPI_CHANNELS-1, spi_slave_select );
+    return -1;
+  }
+  if( frequency < MIN_SPI_FREQUENCY || frequency > MAX_SPI_FREQUENCY )
+  {
+    ROS_WARN( "The requested frequency is out of bounds. Setting frequency to 1MHz" );
+    frequency = 1e6;
+  }
+  
+  
+  // setup SPI channel if it has not been setup yet
+  if( use_spi[spi_slave_select] == false )
+  {
+    if( wiringPiSPISetup (spi_slave_select, frequency) == -1 )
+    {
+      ROS_ERROR( "RaspiInterface::initializeSPI(): SPI channel 0 not initialized properly.");
+      return false;
+    }
+    ROS_INFO( "SPI channel %u initialized.", spi_slave_select );
+  }
+  
+  // read from SPI bus
+  if( wiringPiSPIDataRW (spi_slave_select, data, num_bytes ) == -1 )
+  {
+    ROS_ERROR( "RaspiInterface::initializeSPI(): SPI channel 0 not initialized properly.");
+    return false;
+  }
+  
+  return num_bytes;
 }

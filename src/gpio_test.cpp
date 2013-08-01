@@ -86,5 +86,6 @@ int main( int argc, char **argv )
   }
   
   ROS_WARN( "Closing GPIO driver." );
+  delete myRaspi;
   return 0;  
 }
