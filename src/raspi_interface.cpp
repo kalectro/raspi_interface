@@ -282,6 +282,7 @@ ssize_t RaspiInterface::raspiSpiRead( int frequency, uint8_t flags, uint8_t* dat
       ROS_ERROR( "RaspiInterface::initializeSPI(): SPI channel 0 not initialized properly.");
       return false;
     }
+    use_spi[spi_slave_select] = true;
     ROS_INFO( "SPI channel %u initialized.", spi_slave_select );
   }
   
