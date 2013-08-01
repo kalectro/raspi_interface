@@ -109,7 +109,7 @@ ssize_t RaspiInterface::read( int device_address, interface_protocol protocol, i
     }
     case SPI:
     {
-      error_code = raspiSpiRead( (uint8_t)frequency, (uint8_t)flags[0], data, num_bytes );
+      error_code = raspiSpiRead( frequency, (uint8_t)flags[0], data, num_bytes );
       break;
     }
     default:
