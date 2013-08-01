@@ -52,10 +52,10 @@ int main( int argc, char **argv )
   ros::init( argc, argv, "GPIO_Driver" );
   ros::NodeHandle nh("~");
 
-  RaspiInterface Raspi( );
+  RaspiInterface *myRaspi = new RaspiInterface(); 
 
-  GpioDriver* gpio_input = new GpioDriver( &Raspi, INPUT_PIN );
-  GpioDriver* gpio_output = new GpioDriver( &Raspi, OUTPUT_PIN );
+  GpioDriver* gpio_input = new GpioDriver( myRaspi, INPUT_PIN );
+  GpioDriver* gpio_output = new GpioDriver( myRaspi, OUTPUT_PIN );
 	
   if( gpio_input->initialize() == false || gpio_output->initialize() == false )
   {
