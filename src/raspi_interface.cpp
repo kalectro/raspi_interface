@@ -52,6 +52,11 @@ RaspiInterface::RaspiInterface():
 /**********************************************************************/
 RaspiInterface::~RaspiInterface()
 {
+  // close all serial connections
+  for (std::map<std::string,int>::iterator it=serial_devices_.begin(); it!=serial_devices_.end(); ++it)
+  {
+    serialClose(it->second);
+  }
 }
 
 
@@ -109,9 +114,13 @@ ssize_t RaspiInterface::read( int device_address, interface_protocol protocol, i
     }
     case SPI:
     {
-      error_code = raspiSpiRead( (uint8_t)frequency, (uint8_t)flags[0], data, num_bytes );
+      error_code = raspiSpi( frequency, (uint8_t)flags[0], reg_address, data, num_bytes );
       break;
     }
+    case RS232:
+    {
+      error_code = raspiRs232Read( frequency, data, num_bytes );
+    } break;
     default:
     {
       ROS_ERROR("Raspberry Pi does not support reading through this protocol.");
@@ -142,6 +151,15 @@ ssize_t RaspiInterface::write( int device_address, interface_protocol protocol, 
       error_code = raspiGpioWrite( reg_address, (bool)data[0] );
       break;
     }
+    case SPI:
+    {
+      error_code = raspiSpi( frequency, (uint8_t)flags[0], reg_address, data, num_bytes );
+      break;
+    }
+    case RS232:
+    {
+      error_code = raspiRs232Write( frequency, data, num_bytes );
+    } break;
     default:
     {
       ROS_ERROR( "Raspberry Pi does not support writing through this protocol." );
@@ -162,6 +180,7 @@ bool RaspiInterface::supportedProtocol( interface_protocol protocol )
   {
   case GPIO:
   case SPI:
+  case RS232:
     return true;
   default:
     return false;
@@ -239,7 +258,7 @@ ssize_t RaspiInterface::raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* valu
 
 /**********************************************************************/
 /**********************************************************************/
-ssize_t RaspiInterface::raspiSpiRead( int frequency, uint8_t flags, uint8_t* data, size_t num_bytes ) 
+ssize_t RaspiInterface::raspiSpi( int frequency, uint8_t flags, uint8_t reg_address, uint8_t* data, size_t num_bytes ) 
 {
   //  Decrypt flags:
   uint8_t spi_slave_select = (flags >> 4);
@@ -247,7 +266,7 @@ ssize_t RaspiInterface::raspiSpiRead( int frequency, uint8_t flags, uint8_t* dat
   uint8_t mode = flags & 0x03;
   
   // Sanity check for decrypted flags
-  if( mode != 0 )
+  if( mode != bosch_drivers_common::SPI_MODE_0 )
   {
     ROS_ERROR( "Only mode 0 is implemented in wiringPi at this point" );
     return -1;
@@ -286,12 +305,84 @@ ssize_t RaspiInterface::raspiSpiRead( int frequency, uint8_t flags, uint8_t* dat
     ROS_INFO( "SPI channel %u initialized.", spi_slave_select );
   }
   
-  // read from SPI bus
-  if( wiringPiSPIDataRW (spi_slave_select, data, num_bytes ) == -1 )
-  {
-    ROS_ERROR( "RaspiInterface::initializeSPI(): SPI channel 0 not initialized properly.");
-    return false;
-  }
+  // transfer the address register:
+  wiringPiSPIDataRW( spi_slave_select, reg_address, 1 );
+  
+  // read/write from/to SPI bus
+  wiringPiSPIDataRW( spi_slave_select, data, num_bytes );
   
   return num_bytes;
+}
+
+ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, ssize_t num_bytes )
+{
+  // convert uint8_t* to string
+  if( num_bytes != sizeof(data) / sizeof(data[0]) )
+  {
+    ROS_WARN_ONCE( "Length of data array is %zd but num_bytes is %zd", sizeof(data) / sizeof(data[0]), num_bytes);
+  }
+  std::string complete( data, data + num_bytes );
+  
+  // split string at first colon
+  size_t delimiter = complete.find_first_of( ':' );
+  if( delimiter == string::npos )
+  {
+    ROS_ERROR( "No colon found in data string! Example: /dev/ttyUSB0:helloWorld" );
+    return -1;
+  }  
+  std::string device  = complete.substr( 0, delimiter );
+  std::string command = complete.substr( delimiter + 1 );
+  const char* cdevice = reinterpret_cast<const char*>(&device[0]);
+  
+  // open new serial device if not opened yet
+  if( serial_devices_.find(device) == serial_devices_.end() )
+  {
+    // open serial interface using wiringPi
+    int file_descriptor = serialOpen( cdevice, frequency );
+    // check if serial device was opened successfully
+    if( file_descriptor == -1 )
+    {
+      ROS_ERROR("Opening serial device %s failed :(", cdevice );
+      return -1;
+    }
+    // create new hash entry
+    serial_devices_[device] = file_descriptor;    
+    ROS_INFO( "Successfully opened serial port %s", cdevice );
+  }
+  // write command to RS232 connection
+  serialPuts( serial_devices_[device], reinterpret_cast<const char*>(&command[0]) );
+  
+  return command.size();
+}
+
+ssize_t RaspiInterface::raspiRs232Read( int frequency, uint8_t* data, ssize_t num_bytes )
+{
+  // open new serial device if not opened yet
+  if( serial_devices_.find(data) == serial_devices_.end() )
+  {
+    // open serial interface using wiringPi
+    int file_descriptor = serialOpen( data, frequency );
+    // check if serial device was opened successfully
+    if( file_descriptor == -1 )
+    {
+      ROS_ERROR("Opening serial device %s failed :(", data );
+      return -1;
+    }
+    // create new hash entry
+    serial_devices_[device] = file_descriptor;  
+    ROS_INFO( "Successfully opened serial port %s", data );
+  }
+  // read from RS232
+  int index = 0;
+  while( int temp = serialGetchar( serial_devices_[device] ), temp != -1 && num_bytes-- > 0 )
+  {
+    data[index++] = reinterpret_cast<uint8_t> temp;
+  }
+  
+  if( index != num_bytes )
+  {
+    ROS_WARN( "You asked for %zd bytes but I only read %i due to error or timeout", num_bytes, index );
+  }
+  
+  return index;
 }

@@ -42,6 +42,9 @@
 #include <ros/ros.h>
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
+#include <wiringSerial.h>
+#include <string>
+#include <algorithm>
 
 #include <bosch_drivers_hardware_interface.hpp>
 #include <bosch_drivers_parameters.hpp>
@@ -111,13 +114,19 @@ private:
 
   ssize_t raspiGpioWrite( uint8_t pin, bool value );
   ssize_t raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* value );
-  ssize_t raspiSpiRead( int frequency, uint8_t flags, uint8_t* data, size_t num_bytes );
+  ssize_t raspiSpiRead( int frequency, uint8_t flags, uint8_t reg_address, uint8_t* data, ssize_t num_bytes );
+  ssize_t raspiSpiWrite( int frequency, uint8_t flags, uint8_t reg_address, uint8_t* data, ssize_t num_bytes );
+  ssize_t raspiRs232Read( int frequency, uint8_t* data, ssize_t num_bytes );
+  ssize_t raspiRs232Write( int frequency, uint8_t* data, ssize_t num_bytes );
   
   // is set to false when object is created and set to true after initialize() was successful
   bool is_initialized_;
   
   // save which SPI channels (CS lines) are currently in used
   bool use_spi[MAX_SPI_CHANNELS];
+  
+  // maps opened serial devices with their file descriptor
+  std::map<std::string,int> serial_devices_;
   
 };
 #endif //RASPI_INTERFACE_H_
