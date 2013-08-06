@@ -114,9 +114,9 @@ private:
 
   ssize_t raspiGpioWrite( uint8_t pin, bool value );
   ssize_t raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* value );
-  ssize_t raspiSpi( int frequency, uint8_t flags, uint8_t reg_address, uint8_t* data, ssize_t num_bytes );
-  ssize_t raspiRs232Read( int frequency, int device_name_length, uint8_t* data, ssize_t num_bytes );
-  ssize_t raspiRs232Write( int frequency, uint8_t* data, ssize_t num_bytes );
+  ssize_t raspiSpi( int frequency, uint8_t flags, uint8_t reg_address, uint8_t* data, size_t num_bytes );
+  ssize_t raspiRs232Read( int frequency, int device_name_length, uint8_t* data, size_t num_bytes );
+  ssize_t raspiRs232Write( int frequency, uint8_t* data, size_t num_bytes );
   
   // is set to false when object is created and set to true after initialize() was successful
   bool is_initialized_;

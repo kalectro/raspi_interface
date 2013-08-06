@@ -306,7 +306,7 @@ ssize_t RaspiInterface::raspiSpi( int frequency, uint8_t flags, uint8_t reg_addr
   }
   
   // transfer the address register:
-  wiringPiSPIDataRW( spi_slave_select, reg_address, 1 );
+  wiringPiSPIDataRW( spi_slave_select, &reg_address, 1 );
   
   // read/write from/to SPI bus
   wiringPiSPIDataRW( spi_slave_select, data, num_bytes );
@@ -314,7 +314,7 @@ ssize_t RaspiInterface::raspiSpi( int frequency, uint8_t flags, uint8_t reg_addr
   return num_bytes;
 }
 
-ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, ssize_t num_bytes )
+ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, size_t num_bytes )
 {
   // convert uint8_t* to string
   if( num_bytes != sizeof(data) / sizeof(data[0]) )
@@ -355,32 +355,33 @@ ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, ssize_t n
   return command.size();
 }
 
-ssize_t RaspiInterface::raspiRs232Read( int frequency, int device_name_length, uint8_t* data, ssize_t num_bytes )
+ssize_t RaspiInterface::raspiRs232Read( int frequency, int device_name_length, uint8_t* data, size_t num_bytes )
 {
   std::string device( data, data + device_name_length );
+  const char* cdevice = reinterpret_cast<const char*>(&device[0]);
   
   // open new serial device if not opened yet
-  if( serial_devices_.find(device) == serial_devices_.end() )
+  if( serial_devices_.find(cdevice) == serial_devices_.end() )
   {
     // open serial interface using wiringPi
-    int file_descriptor = serialOpen( device, frequency );
+    int file_descriptor = serialOpen( cdevice, frequency );
     // check if serial device was opened successfully
     if( file_descriptor == -1 )
     {
-      ROS_ERROR("Opening serial device %s failed :(", device );
+      ROS_ERROR("Opening serial device %s failed :(", cdevice );
       return -1;
     }
     // create new hash entry
     serial_devices_[device] = file_descriptor;  
-    ROS_INFO( "Successfully opened serial port %s", device );
+    ROS_INFO( "Successfully opened serial port %s", cdevice );
   }
   // read from RS232
-  int index = 0;
+  unsigned int index = 0;
   int temp = 0;
   while( temp != -1 && num_bytes-- > 0 )
   {
-    temp = serialGetchar( serial_devices_[device] ),
-    data[index++] = reinterpret_cast<uint8_t> temp;
+    temp = serialGetchar( serial_devices_[device] );
+    data[index++] = static_cast<uint8_t>(temp);
   }
   
   if( index != num_bytes )
