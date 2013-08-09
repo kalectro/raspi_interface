@@ -317,10 +317,6 @@ ssize_t RaspiInterface::raspiSpi( int frequency, uint8_t flags, uint8_t reg_addr
 ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, size_t num_bytes )
 {
   // convert uint8_t* to string
-  if( num_bytes != sizeof(data) / sizeof(data[0]) )
-  {
-    ROS_WARN_ONCE( "Length of data array is %zd but num_bytes is %zd", sizeof(data) / sizeof(data[0]), num_bytes);
-  }
   std::string complete( data, data + num_bytes );
   
   // split string at first colon
