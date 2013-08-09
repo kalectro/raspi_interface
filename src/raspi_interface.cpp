@@ -331,7 +331,7 @@ ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, size_t nu
   const char* cdevice = reinterpret_cast<const char*>(&device[0]);
   
   // open new serial device if not opened yet
-  if( serial_devices_.find(device) == serial_devices_.end() )
+  if( serial_devices_.count(device) != 1 )
   {
     // open serial interface using wiringPi
     int file_descriptor = serialOpen( cdevice, frequency );
@@ -357,7 +357,7 @@ ssize_t RaspiInterface::raspiRs232Read( int frequency, int device_name_length, u
   const char* cdevice = reinterpret_cast<const char*>(&device[0]);
   
   // open new serial device if not opened yet
-  if( serial_devices_.find(cdevice) == serial_devices_.end() )
+  if( serial_devices_.count(cdevice) != 1 )
   {
     // open serial interface using wiringPi
     int file_descriptor = serialOpen( cdevice, frequency );
@@ -386,4 +386,118 @@ ssize_t RaspiInterface::raspiRs232Read( int frequency, int device_name_length, u
   }
   
   return index;
+}
+
+/**********************************************************************/
+/**********************************************************************/
+ssize_t RaspiInterface::raspiI2cWrite( uint8_t device_address, uint32_t frequency, uint8_t reg_address, uint8_t* data, size_t num_bytes )
+{
+  switch( frequency )
+  {
+    case 100000:
+    {
+      flags = FREQ_STANDARD;
+    } break;
+    default:
+    {
+      ROS_WARN_ONCE("Default frequency 100k. Use 'gpio load i2c XXXX' to set the frequency");
+    }
+  }
+  
+  // open new i2c device if not opened yet
+  if( i2c_devices_.count(device_address) != 1 )
+  {
+    // open i2c interface using wiringPi
+    int file_descriptor = wiringPiI2CSetup( device_address );
+    // check if i2c device was opened successfully
+    if( file_descriptor == -1 )
+    {
+      ROS_ERROR("Opening i2c device %i failed :(", device_address );
+      return -1;
+    }
+    // create new hash entry
+    i2c_devices_[device_address] = file_descriptor;  
+    ROS_INFO( "Successfully opened i2c device %i", device_address);
+  }
+
+  int error_code = -1;
+  switch( num_bytes )
+  {
+    case 1:
+    {
+      error_code = wiringPiI2CWriteReg8 (i2c_devices_[device_address], reg_address, data[0]);
+    } break;
+    case 2:
+    {
+      // compose 16 Bit value to transmit assuming data[1] is the MSB
+      int temp = ((int)data[1])*256 + data[0];
+      error_code = wiringPiI2CWriteReg16 (i2c_devices_[device_address], reg_address, temp);
+    } break;
+    default:
+    {
+      ROS_ERROR("Raspberry Pi can only transmit either one or two bytes");
+    }
+  }
+  
+  if( error_code == -1 )
+  {
+    ROS_ERROR( "I2C Write failed" );
+    return error_code;
+  }
+  
+  return num_bytes;
+}
+
+/**********************************************************************/
+/**********************************************************************/
+ssize_t RaspiInterface::raspiI2cRead( uint8_t device_address, uint32_t frequency, uint8_t reg_address, uint8_t* data, size_t num_bytes )
+{
+  switch( frequency )
+  {
+    case 100000:
+    {
+      flags = FREQ_STANDARD;
+    } break;
+    default:
+    {
+      ROS_WARN_ONCE("Default frequency 100k. Use 'gpio load i2c XXXX' to set the frequency");
+    }
+  }
+  
+  // open new i2c device if not opened yet
+  if( i2c_devices_.count(device_address) != 1 )
+  {
+    // open i2c interface using wiringPi
+    int file_descriptor = wiringPiI2CSetup( device_address );
+    // check if i2c device was opened successfully
+    if( file_descriptor == -1 )
+    {
+      ROS_ERROR("Opening i2c device %i failed :(", device_address );
+      return -1;
+    }
+    // create new hash entry
+    i2c_devices_[device_address] = file_descriptor;  
+    ROS_INFO( "Successfully opened i2c device %i", device_address);
+  }
+
+  switch( num_bytes )
+  {
+    case 1:
+    {
+      data[0] = wiringPiI2CReadReg8( i2c_devices_[device_address], reg_address );
+    } break;
+    case 2:
+    {
+      int temp = wiringPiI2CWriteReg16( i2c_devices_[device_address], reg_address );
+      data[0] = (uint8_t) temp;
+      data[1] = (uint8_t) ( temp / 256 );
+    } break;
+    default:
+    {
+      ROS_ERROR("Raspberry Pi can only read either one or two bytes");
+      return -1;
+    }
+  }
+  
+  return num_bytes;
 }

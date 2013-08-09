@@ -43,6 +43,7 @@
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 #include <wiringSerial.h>
+#include <wiringPiI2C.h>
 #include <string>
 #include <algorithm>
 
@@ -112,6 +113,8 @@ public:
 
 private:
 
+  ssize_t raspiI2cRead( uint8_t device_address, uint32_t frequency, uint8_t reg_address, uint8_t* data, size_t num_bytes );     
+  ssize_t raspiI2cWrite( uint8_t device_address, uint32_t frequency, uint8_t reg_address, uint8_t* data, size_t num_bytes );
   ssize_t raspiGpioWrite( uint8_t pin, bool value );
   ssize_t raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* value );
   ssize_t raspiSpi( int frequency, uint8_t flags, uint8_t reg_address, uint8_t* data, size_t num_bytes );
@@ -143,6 +146,9 @@ private:
   
   // maps opened serial devices with their file descriptor
   std::map<std::string,int> serial_devices_;
+  
+  // maps opened I2C devices with their file descriptor
+  std::map<uint8_t,int> i2c_devices_;
   
 };
 #endif //RASPI_INTERFACE_H_
