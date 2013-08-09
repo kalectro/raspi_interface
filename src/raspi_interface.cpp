@@ -318,7 +318,7 @@ ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, size_t nu
 {
   // convert uint8_t* to string
   std::string complete( data, data + num_bytes );
-  
+  ROS_INFO("complete string: %s", reinterpret_cast<const char*>(&complete[0]) ); 
   // split string at first colon
   size_t delimiter = complete.find_first_of( ':' );
   if( delimiter == std::string::npos )
@@ -334,6 +334,7 @@ ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, size_t nu
   if( serial_devices_.count(device) != 1 )
   {
     // open serial interface using wiringPi
+    ROS_INFO("Opening serial interface %s.", cdevice );
     int file_descriptor = serialOpen( cdevice, frequency );
     // check if serial device was opened successfully
     if( file_descriptor == -1 )
