@@ -115,7 +115,24 @@ private:
   ssize_t raspiGpioWrite( uint8_t pin, bool value );
   ssize_t raspiGpioRead( uint8_t flags, uint8_t pin, uint8_t* value );
   ssize_t raspiSpi( int frequency, uint8_t flags, uint8_t reg_address, uint8_t* data, size_t num_bytes );
+  
+  /**
+   * \brief  Reads \a num_bytes from the serial interface
+   * \param  frequency Baud rate
+   * \param  device_name_length number of letters for device name (/dev/ttyUSB0 -> 12)
+   * \param  data contains the device name to read from with a minimum size of \a num_bytes
+   * \param num_bytes Number of bytes to read
+   * \return number of bytes read or -1 for failure
+   */
   ssize_t raspiRs232Read( int frequency, int device_name_length, uint8_t* data, size_t num_bytes );
+  
+  /**
+   * \brief  Writes a command to the serial interface
+   * \param  frequency Baud rate
+   * \param  data contains the device name and the command to send separated by a colon (/dev/ttyUSB0:helloWorld)
+   * \param num_bytes length of \a data array
+   * \return number of bytes sent through the serial port or -1 for failure
+   */
   ssize_t raspiRs232Write( int frequency, uint8_t* data, size_t num_bytes );
   
   // is set to false when object is created and set to true after initialize() was successful
