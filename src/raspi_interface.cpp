@@ -395,10 +395,7 @@ ssize_t RaspiInterface::raspiI2cWrite( uint8_t device_address, uint32_t frequenc
 {
   switch( frequency )
   {
-    case 100000:
-    {
-      flags = FREQ_STANDARD;
-    } break;
+    case 100000: break;
     default:
     {
       ROS_WARN_ONCE("Default frequency 100k. Use 'gpio load i2c XXXX' to set the frequency");
@@ -455,10 +452,7 @@ ssize_t RaspiInterface::raspiI2cRead( uint8_t device_address, uint32_t frequency
 {
   switch( frequency )
   {
-    case 100000:
-    {
-      flags = FREQ_STANDARD;
-    } break;
+    case 100000: break;
     default:
     {
       ROS_WARN_ONCE("Default frequency 100k. Use 'gpio load i2c XXXX' to set the frequency");
@@ -489,7 +483,7 @@ ssize_t RaspiInterface::raspiI2cRead( uint8_t device_address, uint32_t frequency
     } break;
     case 2:
     {
-      int temp = wiringPiI2CWriteReg16( i2c_devices_[device_address], reg_address );
+      int temp = wiringPiI2CReadReg16( i2c_devices_[device_address], reg_address );
       data[0] = (uint8_t) temp;
       data[1] = (uint8_t) ( temp / 256 );
     } break;
