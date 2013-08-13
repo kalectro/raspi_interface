@@ -189,6 +189,7 @@ bool RaspiInterface::supportedProtocol( interface_protocol protocol )
   case GPIO:
   case SPI:
   case RS232:
+  case I2C:
     return true;
   default:
     return false;
@@ -307,7 +308,7 @@ ssize_t RaspiInterface::raspiSpi( int frequency, uint8_t flags, uint8_t reg_addr
     if( wiringPiSPISetup (spi_slave_select, frequency) == -1 )
     {
       ROS_ERROR( "RaspiInterface::initializeSPI(): SPI channel 0 not initialized properly.");
-      return false;
+      return -1;
     }
     use_spi[spi_slave_select] = true;
     ROS_INFO( "SPI channel %u initialized.", spi_slave_select );
