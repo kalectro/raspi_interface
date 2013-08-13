@@ -117,6 +117,10 @@ ssize_t RaspiInterface::read( int device_address, interface_protocol protocol, i
       error_code = raspiSpi( frequency, (uint8_t)flags[0], reg_address, data, num_bytes );
       break;
     }
+    case I2C:
+    {
+      error_code = raspiI2cRead( device_address, frequency, reg_address, data, num_bytes );
+    } break;
     case RS232:
     {
       error_code = raspiRs232Read( frequency, flags[0], data, num_bytes );
@@ -159,6 +163,10 @@ ssize_t RaspiInterface::write( int device_address, interface_protocol protocol, 
     case RS232:
     {
       error_code = raspiRs232Write( frequency, data, num_bytes );
+    } break;
+    case I2C:
+    {
+      error_code = raspiI2cWrite( device_address, frequency, reg_address, data, num_bytes );
     } break;
     default:
     {
@@ -317,8 +325,7 @@ ssize_t RaspiInterface::raspiSpi( int frequency, uint8_t flags, uint8_t reg_addr
 ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, size_t num_bytes )
 {
   // convert uint8_t* to string
-  std::string complete( data, data + num_bytes );
-  ROS_INFO("complete string: %s", reinterpret_cast<const char*>(&complete[0]) ); 
+  std::string complete( data, data + num_bytes ); 
   // split string at first colon
   size_t delimiter = complete.find_first_of( ':' );
   if( delimiter == std::string::npos )
@@ -328,13 +335,14 @@ ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, size_t nu
   }  
   std::string device  = complete.substr( 0, delimiter );
   std::string command = complete.substr( delimiter + 1 );
-  const char* cdevice = reinterpret_cast<const char*>(&device[0]);
+  char* cdevice = reinterpret_cast<char*>(&device[0]);
+  char* ccommand= reinterpret_cast<char*>(&command[0]);
   
   // open new serial device if not opened yet
   if( serial_devices_.count(device) != 1 )
   {
     // open serial interface using wiringPi
-    ROS_INFO("Opening serial interface %s.", cdevice );
+    ROS_INFO("Opening serial interface %s...", cdevice );
     int file_descriptor = serialOpen( cdevice, frequency );
     // check if serial device was opened successfully
     if( file_descriptor == -1 )
@@ -342,12 +350,15 @@ ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, size_t nu
       ROS_ERROR("Opening serial device %s failed :(", cdevice );
       return -1;
     }
+    else
+    {
+      ROS_INFO( "Successfully opened serial port %s", cdevice );
+    }
     // create new hash entry
     serial_devices_[device] = file_descriptor;    
-    ROS_INFO( "Successfully opened serial port %s", cdevice );
   }
   // write command to RS232 connection
-  serialPuts( serial_devices_[device], reinterpret_cast<const char*>(&command[0]) );
+  serialPuts( serial_devices_[device], ccommand );
   
   return command.size();
 }
@@ -355,12 +366,13 @@ ssize_t RaspiInterface::raspiRs232Write( int frequency, uint8_t* data, size_t nu
 ssize_t RaspiInterface::raspiRs232Read( int frequency, int device_name_length, uint8_t* data, size_t num_bytes )
 {
   std::string device( data, data + device_name_length );
-  const char* cdevice = reinterpret_cast<const char*>(&device[0]);
+  char* cdevice = reinterpret_cast<char*>(&device[0]);
   
   // open new serial device if not opened yet
   if( serial_devices_.count(cdevice) != 1 )
   {
     // open serial interface using wiringPi
+    ROS_INFO("Opening serial interface %s...", cdevice );
     int file_descriptor = serialOpen( cdevice, frequency );
     // check if serial device was opened successfully
     if( file_descriptor == -1 )
@@ -368,9 +380,12 @@ ssize_t RaspiInterface::raspiRs232Read( int frequency, int device_name_length, u
       ROS_ERROR("Opening serial device %s failed :(", cdevice );
       return -1;
     }
+    else
+    {
+      ROS_INFO( "Successfully opened serial port %s", cdevice );
+    }
     // create new hash entry
-    serial_devices_[device] = file_descriptor;  
-    ROS_INFO( "Successfully opened serial port %s", cdevice );
+    serial_devices_[device] = file_descriptor;
   }
   // read from RS232
   unsigned int index = 0;
