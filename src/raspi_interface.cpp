@@ -493,9 +493,9 @@ ROS_INFO("raspiI2cRead %u %u %u %i", device_address, frequency, reg_address, num
     ROS_INFO( "Successfully opened i2c device %i", device_address);
   }
 
-  for( int i = num_bytes; i < reg_address + num_bytes; i++)
+  for( int i = reg_address; i < reg_address + num_bytes; i++)
   {
-      data[i-num_bytes] = wiringPiI2CReadReg8( i2c_devices_[device_address], i);
+      data[i-reg_address] = wiringPiI2CReadReg8( i2c_devices_[device_address], i);
   }
   
   return num_bytes;
