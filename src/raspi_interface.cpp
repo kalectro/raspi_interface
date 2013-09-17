@@ -409,6 +409,7 @@ ssize_t RaspiInterface::raspiRs232Read( int frequency, int device_name_length, u
 /**********************************************************************/
 ssize_t RaspiInterface::raspiI2cWrite( uint8_t device_address, uint32_t frequency, uint8_t reg_address, uint8_t* data, size_t num_bytes )
 {
+ROS_INFO("raspiI2cWrite %u %u %u %u %i", device_address, frequency, reg_address, data[0], num_bytes);
   switch( frequency )
   {
     case 100000: break;
@@ -439,7 +440,7 @@ ssize_t RaspiInterface::raspiI2cWrite( uint8_t device_address, uint32_t frequenc
   {
     case 1:
     {
-      error_code = wiringPiI2CWriteReg8 (i2c_devices_[device_address], reg_address, data[0]);
+      error_code = wiringPiI2CWriteReg8 (i2c_devices_[device_address], (int)reg_address, (int)(data[0]));
     } break;
     case 2:
     {
@@ -455,7 +456,7 @@ ssize_t RaspiInterface::raspiI2cWrite( uint8_t device_address, uint32_t frequenc
   
   if( error_code == -1 )
   {
-    ROS_ERROR( "I2C Write failed" );
+    ROS_ERROR( "I2C Write failed on device %u, register %i and data %i",device_address, (int)reg_address, (int)(data[0]) );
     return error_code;
   }
   
@@ -466,6 +467,7 @@ ssize_t RaspiInterface::raspiI2cWrite( uint8_t device_address, uint32_t frequenc
 /**********************************************************************/
 ssize_t RaspiInterface::raspiI2cRead( uint8_t device_address, uint32_t frequency, uint8_t reg_address, uint8_t* data, size_t num_bytes )
 {
+ROS_INFO("raspiI2cRead %u %u %u %i", device_address, frequency, reg_address, num_bytes);
   switch( frequency )
   {
     case 100000: break;
@@ -491,23 +493,9 @@ ssize_t RaspiInterface::raspiI2cRead( uint8_t device_address, uint32_t frequency
     ROS_INFO( "Successfully opened i2c device %i", device_address);
   }
 
-  switch( num_bytes )
+  for( int i = num_bytes; i < reg_address + num_bytes; i++)
   {
-    case 1:
-    {
-      data[0] = wiringPiI2CReadReg8( i2c_devices_[device_address], reg_address );
-    } break;
-    case 2:
-    {
-      int temp = wiringPiI2CReadReg16( i2c_devices_[device_address], reg_address );
-      data[0] = (uint8_t) temp;
-      data[1] = (uint8_t) ( temp / 256 );
-    } break;
-    default:
-    {
-      ROS_ERROR("Raspberry Pi can only read either one or two bytes");
-      return -1;
-    }
+      data[i-num_bytes] = wiringPiI2CReadReg8( i2c_devices_[device_address], i);
   }
   
   return num_bytes;
