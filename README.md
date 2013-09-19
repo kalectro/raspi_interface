@@ -6,10 +6,10 @@ Hardware interface for use of Raspberry Pi with ROS using bosch_drivers and wiri
 This package is an additional hardware interface to work with the bosch_drivers architecture. It utilizes the awesome wiringPi library to access GPIOs, SPI, I2C and RS232. This package is still under heavy development.
 
 #### current status:
+* I2C - implemented and tested on BMC050
 * GPIO - roughly tested
 * SPI - very roughly tested
 * RS232 - implemented but not working
-* I2C - implemented but not tested
 
 
 Installation and Test
