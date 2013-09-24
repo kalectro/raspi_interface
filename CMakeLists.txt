@@ -1,23 +1,21 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(raspi_interface)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+find_package(catkin REQUIRED COMPONENTS roscpp bosch_drivers_common gpio_driver)
 
-rosbuild_init()
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES raspi_interface
+)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+## Specify additional locations of header files
+include_directories(include
+  ${catkin_INCLUDE_DIRS}
+)
 
-rosbuild_add_library(raspi_interface src/raspi_interface.cpp)
-target_link_libraries(raspi_interface wiringPi)
+add_library(raspi_interface src/raspi_interface.cpp)
 
-rosbuild_add_executable(gpio_test src/gpio_test.cpp)
-target_link_libraries(gpio_test gpio_driver raspi_interface)
+target_link_libraries(raspi_interface ${catkin_LIBRARIES})
+
+install(TARGETS raspi_interface
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
